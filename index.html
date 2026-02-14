@@ -109,6 +109,52 @@
             opacity: 0.6;
             z-index: -1;
         }
+
+        /* --- СТИЛИ ДЛЯ ПЕЧАТИ --- */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.5cm;
+            }
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                overflow: visible;
+            }
+            /* Скрываем интерфейс игры при печати */
+            .no-print, .no-print * {
+                display: none !important;
+            }
+            /* Показываем зону печати */
+            #printable-area {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr); /* 2 колонки */
+                gap: 10px;
+                width: 100%;
+                justify-items: center;
+            }
+            /* Адаптируем карточку для бумаги */
+            .dobble-card-print {
+                width: 90mm !important; /* Около 9см диаметр */
+                height: 90mm !important;
+                border: 1px solid #ccc !important; /* Тонкая рамка для вырезания */
+                box-shadow: none !important;
+                border-radius: 50%;
+                position: relative;
+                overflow: hidden;
+                page-break-inside: avoid; /* Не разрывать карточку между страницами */
+                break-inside: avoid;
+                margin-bottom: 10px;
+            }
+            .symbol-container {
+                cursor: default;
+            }
+        }
+
+        /* Скрываем зону печати в обычном режиме */
+        #printable-area {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -126,7 +172,7 @@
             8: { n: 7, required: 57, label: "🔥 Профи (8 шт)", color: "bg-orange-400" }
         };
 
-        // Генератор (оставлен без изменений)
+        // Генератор
         function generateDobbleDeck(n) {
             const deck = [];
             for (let i = 0; i <= n; i++) {
@@ -218,9 +264,12 @@
                 if (presentIn1 && presentIn2) {
                     setScore(s => s + 1);
                     setFeedback('success');
-                    // Звук "чпок" или успех можно добавить здесь
                     setTimeout(nextTurn, 500);
                 }
+            };
+
+            const handlePrint = () => {
+                window.print();
             };
 
             useEffect(() => {
@@ -241,7 +290,7 @@
                 const isReady = currentCount >= required;
 
                 return (
-                    <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto flex flex-col items-center">
+                    <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto flex flex-col items-center no-print">
                         {/* Декор - облака */}
                         <div className="bg-cloud w-32 h-16 top-10 left-10"></div>
                         <div className="bg-cloud w-48 h-24 bottom-10 right-10"></div>
@@ -330,27 +379,34 @@
                 );
             }
 
-            // --- РЕНДЕР: ИГРА ---
+            // --- РЕНДЕР: ИГРА + ПЕЧАТЬ ---
             return (
                 <div className="min-h-screen flex flex-col items-center relative overflow-hidden">
-                    {/* Облака на фоне */}
-                    <div className="absolute top-10 left-10 text-blue-100 text-9xl opacity-20 pointer-events-none animate-pulse"><i className="fas fa-cloud"></i></div>
-                    <div className="absolute bottom-20 right-20 text-pink-100 text-9xl opacity-20 pointer-events-none"><i className="fas fa-heart"></i></div>
+                    {/* Облака на фоне (no-print) */}
+                    <div className="absolute top-10 left-10 text-blue-100 text-9xl opacity-20 pointer-events-none animate-pulse no-print"><i className="fas fa-cloud"></i></div>
+                    <div className="absolute bottom-20 right-20 text-pink-100 text-9xl opacity-20 pointer-events-none no-print"><i className="fas fa-heart"></i></div>
 
-                    {/* Верхняя панель */}
-                    <div className="w-full max-w-5xl px-4 py-4 flex justify-between items-center z-10">
+                    {/* Верхняя панель (no-print) */}
+                    <div className="w-full max-w-5xl px-4 py-4 flex justify-between items-center z-10 no-print">
                         <button onClick={() => setGameState('upload')} className="bg-white text-gray-500 px-4 py-2 rounded-full font-bold shadow-md hover:bg-gray-50 transition border-2 border-gray-100">
                             <i className="fas fa-chevron-left mr-2"></i> Меню
                         </button>
                         
-                        <div className="bg-white px-6 py-2 rounded-full shadow-lg border-2 border-purple-100 flex items-center gap-2">
-                            <span className="text-gray-400 font-bold text-sm uppercase">Счет:</span>
-                            <span className="text-3xl font-black text-purple-500">{score}</span>
+                        <div className="flex gap-3">
+                             {/* Кнопка Печати */}
+                             <button onClick={handlePrint} className="bg-yellow-100 text-yellow-600 px-4 py-2 rounded-full font-bold shadow-md hover:bg-yellow-200 transition border-2 border-yellow-200 flex items-center">
+                                <i className="fas fa-print mr-2"></i> Печать (PDF)
+                            </button>
+
+                            <div className="bg-white px-6 py-2 rounded-full shadow-lg border-2 border-purple-100 flex items-center gap-2">
+                                <span className="text-gray-400 font-bold text-sm uppercase">Счет:</span>
+                                <span className="text-3xl font-black text-purple-500">{score}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Игровое поле */}
-                    <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-16 p-4 w-full max-w-6xl z-10">
+                    {/* Игровое поле (no-print) */}
+                    <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-16 p-4 w-full max-w-6xl z-10 no-print">
                         <Card symbols={deck[currentPair[0]]} onSymbolClick={handleMatchCheck} isFeedback={feedback} />
                         
                         <div className="hidden md:flex flex-col items-center text-gray-300">
@@ -361,24 +417,71 @@
                         <Card symbols={deck[currentPair[1]]} onSymbolClick={handleMatchCheck} isFeedback={feedback} />
                     </div>
 
-                    <button onClick={nextTurn} className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-full shadow-xl flex items-center justify-center active:scale-90 transition z-50 md:hidden border-4 border-white">
+                    <button onClick={nextTurn} className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-full shadow-xl flex items-center justify-center active:scale-90 transition z-50 md:hidden border-4 border-white no-print">
                         <i className="fas fa-forward text-2xl"></i>
                     </button>
                     
                     {feedback === 'success' && (
-                        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+                        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50 no-print">
                             <div className="text-6xl animate-bounce">✨ Молодец! ✨</div>
                         </div>
                     )}
+
+                    {/* --- ЗОНА ПЕЧАТИ (СКРЫТА В ОБЫЧНОМ РЕЖИМЕ) --- */}
+                    <div id="printable-area">
+                        {deck.map((cardSymbols, index) => (
+                            <CardPrint key={index} symbols={cardSymbols} />
+                        ))}
+                    </div>
                 </div>
             );
         }
 
-        // --- КОМПОНЕНТ КАРТОЧКИ ---
-        
+        // --- КОМПОНЕНТ КАРТОЧКИ (ИГРА) ---
         function Card({ symbols, onSymbolClick, isFeedback }) {
-            
-            const calculateLayout = (items) => {
+            const layoutItems = useCardLayout(symbols);
+
+            return (
+                <div className={`dobble-card pop-in ${isFeedback === 'success' ? 'match-success' : ''}`}>
+                     {layoutItems.map((layout, idx) => (
+                        <div 
+                            key={`${layout.item.id}-${idx}`}
+                            className="symbol-container hover:scale-110 transition-transform"
+                            style={layout.style}
+                            onClick={() => onSymbolClick(layout.item)}
+                        >
+                            <img src={layout.item.src} alt="symbol" className="symbol-image" />
+                        </div>
+                     ))}
+                </div>
+            );
+        }
+
+        // --- КОМПОНЕНТ КАРТОЧКИ (ПЕЧАТЬ) ---
+        // Упрощенная версия без обработчиков клика и анимаций
+        function CardPrint({ symbols }) {
+            // Генерируем новый seed для каждой карты печати, чтобы они были разнообразными, но фиксированными при рендере
+            // useMemo здесь важен, чтобы при перерисовке родителя печать не прыгала
+            const layoutItems = useCardLayout(symbols);
+
+            return (
+                <div className="dobble-card-print">
+                     {layoutItems.map((layout, idx) => (
+                        <div 
+                            key={`${layout.item.id}-${idx}`}
+                            className="symbol-container"
+                            style={layout.style}
+                        >
+                            <img src={layout.item.src} alt="symbol" className="symbol-image" />
+                        </div>
+                     ))}
+                </div>
+            );
+        }
+
+        // Hook для расчета позиций (общий для игры и печати)
+        function useCardLayout(items) {
+             return useMemo(() => {
                 const count = items.length;
                 let config = { radius: 32, size: 22 }; 
 
@@ -431,24 +534,7 @@
                         }
                     };
                 });
-            };
-
-            const layoutItems = useMemo(() => calculateLayout(symbols), [symbols]);
-
-            return (
-                <div className={`dobble-card pop-in ${isFeedback === 'success' ? 'match-success' : ''}`}>
-                     {layoutItems.map((layout, idx) => (
-                        <div 
-                            key={`${layout.item.id}-${idx}`}
-                            className="symbol-container hover:scale-110 transition-transform"
-                            style={layout.style}
-                            onClick={() => onSymbolClick(layout.item)}
-                        >
-                            <img src={layout.item.src} alt="symbol" className="symbol-image" />
-                        </div>
-                     ))}
-                </div>
-            );
+            }, [items]);
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
